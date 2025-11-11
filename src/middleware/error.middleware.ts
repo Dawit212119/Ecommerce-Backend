@@ -11,14 +11,14 @@ interface PrismaLikeError extends Error {
 }
 
 const isPrismaError = (e: unknown): e is PrismaLikeError => {
-  return typeof (e as any)?.code === 'string';
+  return typeof (e as PrismaLikeError)?.code === 'string';
 };
 
 export const errorHandler = (
   err: PrismaLikeError | AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   // eslint-disable-next-line no-console
   console.error('Error:', err);

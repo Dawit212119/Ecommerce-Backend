@@ -1,13 +1,11 @@
-/**
- * Cloudinary Utility for Image Uploads
- */
+// Cloudinary Utility for Image Uploads
+
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import { Readable } from 'stream';
 
 dotenv.config();
 
-// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',
   api_key: process.env.CLOUDINARY_API_KEY || '',
@@ -30,6 +28,7 @@ export interface UploadResult {
  * @param folder - Optional folder name in Cloudinary
  * @returns Upload result with secure URL
  */
+
 export const uploadImage = async (
   file: Buffer | string,
   folder: string = 'ecommerce-products'
@@ -69,7 +68,11 @@ export const uploadImage = async (
       const readableStream = new Readable();
       readableStream.push(file);
       readableStream.push(null);
-      readableStream.pipe(uploadStream);
+      readableStream.on('error', error => {
+        reject(error);
+      });
+      // Pipe operation is synchronous, errors handled via callbacks
+      void readableStream.pipe(uploadStream);
     } else {
       // Upload from file path
       cloudinary.uploader.upload(file, uploadOptions, (error, result) => {

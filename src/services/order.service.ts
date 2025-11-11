@@ -1,7 +1,7 @@
 /**
  * Order service - Business logic for order operations
  */
-import { PrismaClient, Order, OrderItem, Product } from '@prisma/client';
+import { PrismaClient, Order, OrderItem } from '@prisma/client';
 
 const prisma = new PrismaClient();
 

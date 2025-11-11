@@ -19,14 +19,17 @@ const redisClient = new Redis({
 });
 
 redisClient.on('connect', () => {
+  // eslint-disable-next-line no-console
   console.log('✅ Redis client connected');
 });
 
 redisClient.on('error', err => {
+  // eslint-disable-next-line no-console
   console.error('❌ Redis client error:', err);
 });
 
 redisClient.on('close', () => {
+  // eslint-disable-next-line no-console
   console.log('🔌 Redis client connection closed');
 });
 

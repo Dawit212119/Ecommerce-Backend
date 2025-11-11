@@ -1,12 +1,14 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import productRoutes from './routes/product.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import { apiLimiter, authLimiter } from './middleware/rateLimit.middleware.js';
+import { swaggerSpec } from './config/swagger.config.js';
 
 dotenv.config();
 
@@ -23,6 +25,16 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Swagger API Documentation
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'E-Commerce API Documentation',
+  })
+);
 
 app.use('/auth', authLimiter, authRoutes);
 app.use('/api/users', apiLimiter, userRoutes);

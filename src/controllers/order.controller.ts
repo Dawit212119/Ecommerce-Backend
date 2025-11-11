@@ -1,7 +1,7 @@
 /**
  * Order controller - Handles HTTP requests for order operations
  */
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import * as orderService from '../services/order.service.js';
 import { successResponse, createPaginatedResponse } from '../utils/response.util.js';
 import { AuthRequest } from '../middleware/auth.middleware.js';

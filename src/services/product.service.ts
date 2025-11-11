@@ -1,7 +1,7 @@
 /**
  * Product service - Business logic for product operations
  */
-import { PrismaClient, Product, User, Prisma } from '@prisma/client';
+import { PrismaClient, Product, Prisma } from '@prisma/client';
 import {
   getCache,
   setCache,
@@ -72,12 +72,9 @@ export interface UpdateProductData {
   price?: number | string;
   stock?: number | string;
   category?: string;
-  imageUrl?: string; // Cloudinary image URL
+  imageUrl?: string;
 }
 
-/**
- * Create a new product
- */
 export const createProduct = async (productData: CreateProductData): Promise<ProductWithUser> => {
   const { name, description, price, stock, category, userId, imageUrl } = productData;
 
@@ -102,7 +99,6 @@ export const createProduct = async (productData: CreateProductData): Promise<Pro
     },
   });
 
-  // Invalidate product list cache
   try {
     await deleteCacheByPattern('products:*');
   } catch (error) {
@@ -112,10 +108,6 @@ export const createProduct = async (productData: CreateProductData): Promise<Pro
   return product as ProductWithUser;
 };
 
-/**
- * Get all products with pagination
- * Legacy method - returns full product details with user info
- */
 export const getProducts = async (
   options: ProductOptions = {}
 ): Promise<PaginatedProductsResult> => {
@@ -124,7 +116,6 @@ export const getProducts = async (
   const skip = (parseInt(page.toString()) - 1) * parseInt(pageSize.toString());
   const take = parseInt(pageSize.toString());
 
-  // Build where clause
   const where: any = {};
   if (category) where.category = category;
   if (userId) where.userId = userId;
@@ -135,7 +126,6 @@ export const getProducts = async (
     ];
   }
 
-  // Get products and total count
   const [products, totalSize] = await Promise.all([
     prisma.product.findMany({
       where,
@@ -165,19 +155,6 @@ export const getProducts = async (
   };
 };
 
-/**
- * Get product list (User Story 5) with search functionality (User Story 6)
- * Returns only essential product information for public listing
- *
- * User Story 6:
- * - Search parameter searches product name only (case-insensitive, partial-match)
- * - If search is empty or not provided, returns all products
- * - totalProducts reflects the count of search results, not all products
- *
- * Enhanced with:
- * - Redis caching for improved performance
- * - Advanced search and filtering (price range, sorting)
- */
 export const getProductList = async (options: ProductOptions = {}): Promise<ProductListResult> => {
   const {
     page = 1,
@@ -191,10 +168,8 @@ export const getProductList = async (options: ProductOptions = {}): Promise<Prod
     sortOrder = 'desc',
   } = options;
 
-  // Generate cache key
   const cacheKey = generateProductListCacheKey(options);
 
-  // Try to get from cache
   try {
     const cachedData = await getCache(cacheKey);
     if (cachedData) {
@@ -202,10 +177,8 @@ export const getProductList = async (options: ProductOptions = {}): Promise<Prod
     }
   } catch (error) {
     console.error('Cache read error:', error);
-    // Continue with database query if cache fails
   }
 
-  // User Story 5: Support both limit and pageSize, default to 10
   const itemsPerPage = limit
     ? parseInt(limit.toString())
     : pageSize
@@ -221,12 +194,10 @@ export const getProductList = async (options: ProductOptions = {}): Promise<Prod
   if (category) where.category = category;
 
   // User Story 6: Search by product name only (case-insensitive, partial-match)
-  // If search is empty, null, or not provided, return all products
   if (search && typeof search === 'string' && search.trim() !== '') {
     where.name = { contains: search.trim(), mode: 'insensitive' };
   }
 
-  // Advanced search: Price range filtering
   if (minPrice !== undefined || maxPrice !== undefined) {
     where.price = {};
     if (minPrice !== undefined) {
@@ -237,7 +208,6 @@ export const getProductList = async (options: ProductOptions = {}): Promise<Prod
     }
   }
 
-  // Advanced search: Sorting
   const orderBy: Prisma.ProductOrderByWithRelationInput = {};
   if (sortBy === 'price') {
     orderBy.price = sortOrder;
@@ -247,21 +217,19 @@ export const getProductList = async (options: ProductOptions = {}): Promise<Prod
     orderBy.createdAt = sortOrder;
   }
 
-  // Get products and total count
   const [products, totalProducts] = await Promise.all([
     prisma.product.findMany({
       where,
       skip,
       take,
       select: {
-        // User Story 5: Essential product information only
         id: true,
         name: true,
         price: true,
         stock: true,
         category: true,
         description: true,
-        imageUrl: true, // Include image URL
+        imageUrl: true,
       },
       orderBy,
     }),
@@ -278,21 +246,15 @@ export const getProductList = async (options: ProductOptions = {}): Promise<Prod
     totalProducts,
   };
 
-  // Cache the result
   try {
     await setCache(cacheKey, JSON.stringify(result), CACHE_TTL);
   } catch (error) {
     console.error('Cache write error:', error);
-    // Continue even if cache write fails
   }
 
   return result;
 };
 
-/**
- * Get product by ID (User Story 7)
- * Returns complete product object with all details
- */
 export const getProductById = async (
   productId: string
 ): Promise<{
@@ -308,7 +270,6 @@ export const getProductById = async (
   const product = await prisma.product.findUnique({
     where: { id: productId },
     select: {
-      // User Story 7: Complete product object with all details
       id: true,
       name: true,
       description: true,
@@ -330,17 +291,12 @@ export const getProductById = async (
   return product;
 };
 
-/**
- * Update product
- * User Story 4: Admin can update any product (no userId check needed)
- */
 export const updateProduct = async (
   productId: string,
   updateData: UpdateProductData,
   isAdmin: boolean = false,
   userId?: string
 ): Promise<ProductWithUser> => {
-  // Check if product exists
   const existingProduct = await prisma.product.findUnique({
     where: { id: productId },
   });
@@ -351,7 +307,6 @@ export const updateProduct = async (
     throw error;
   }
 
-  // User Story 4: Only Admin can update products (or owner for legacy endpoint)
   if (!isAdmin) {
     if (!userId || existingProduct.userId !== userId) {
       const error = new Error('You are not authorized to update this product') as Error & {
@@ -362,7 +317,6 @@ export const updateProduct = async (
     }
   }
 
-  // Prepare update data
   const data: any = {};
   if (updateData.name) data.name = updateData.name;
   if (updateData.description) data.description = updateData.description;
@@ -385,7 +339,6 @@ export const updateProduct = async (
     },
   });
 
-  // Invalidate product list cache
   try {
     await deleteCacheByPattern('products:*');
   } catch (error) {
@@ -395,16 +348,11 @@ export const updateProduct = async (
   return product as ProductWithUser;
 };
 
-/**
- * Delete product (User Story 8)
- * Admin can delete any product
- */
 export const deleteProduct = async (
   productId: string,
   isAdmin: boolean = false,
   userId?: string
 ): Promise<void> => {
-  // Check if product exists
   const existingProduct = await prisma.product.findUnique({
     where: { id: productId },
   });
@@ -415,7 +363,6 @@ export const deleteProduct = async (
     throw error;
   }
 
-  // User Story 8: Only Admin can delete products (or owner for legacy endpoint)
   if (!isAdmin) {
     if (!userId || existingProduct.userId !== userId) {
       const error = new Error('You are not authorized to delete this product') as Error & {
@@ -430,7 +377,6 @@ export const deleteProduct = async (
     where: { id: productId },
   });
 
-  // Invalidate product list cache
   try {
     await deleteCacheByPattern('products:*');
   } catch (error) {
