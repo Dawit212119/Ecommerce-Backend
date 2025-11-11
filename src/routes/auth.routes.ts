@@ -116,4 +116,11 @@ router.post(
   userController.login
 );
 
+/**
+ * @route   POST /auth/logout
+ * @desc    Logout user and clear authentication cookie
+ * @access  Public
+ */
+router.post('/logout', userController.logout);
+
 export default router;

@@ -8,29 +8,55 @@ import { AuthRequest } from '../middleware/auth.middleware.js';
 
 /**
  * Register a new user
+ * Sets JWT token in HTTP-only cookie
  */
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { user, token } = await userService.registerUser(req.body);
-    res.status(201).json(successResponse('User registered successfully', { user, token }));
+    const { config } = await import('../config/config.js');
+    
+    // Set token in HTTP-only cookie
+    res.cookie(config.cookie.name, token, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+      maxAge: config.cookie.maxAge,
+    });
+    
+    // Return user data without token
+    res.status(201).json(successResponse('User registered successfully', { user }));
   } catch (error) {
     next(error);
   }
 };
 
-// Login user
-
+/**
+ * Login user
+ * Sets JWT token in HTTP-only cookie
+ */
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { user, token } = await userService.loginUser(req.body);
-    res.status(200).json(successResponse('Login successful', { user, token }));
+    const { config } = await import('../config/config.js');
+    
+    // Set token in HTTP-only cookie
+    res.cookie(config.cookie.name, token, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+      maxAge: config.cookie.maxAge,
+    });
+    
+    // Return user data without token
+    res.status(200).json(successResponse('Login successful', { user }));
   } catch (error) {
     next(error);
   }
 };
 
-// Get user profile
-
+/**
+ * Get user profile
+ */
 export const getProfile = async (
   req: AuthRequest,
   res: Response,
@@ -43,6 +69,27 @@ export const getProfile = async (
     }
     const user = await userService.getUserById(req.user.userId);
     res.status(200).json(successResponse('Profile retrieved successfully', user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Logout user
+ * Clears the authentication cookie
+ */
+export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { config } = await import('../config/config.js');
+    
+    // Clear the authentication cookie
+    res.clearCookie(config.cookie.name, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+    });
+    
+    res.status(200).json(successResponse('Logout successful'));
   } catch (error) {
     next(error);
   }

@@ -4,7 +4,7 @@ A comprehensive REST API for an e-commerce platform built with Express.js, Prism
 
 ## 🚀 Features
 
-- **User Authentication**: JWT-based authentication with secure password hashing
+- **User Authentication**: JWT-based authentication with secure HTTP-only cookies
 - **Product Management**: Full CRUD operations for products with pagination and filtering
 - **Order Management**: Create and manage orders with automatic stock updates
 - **Clean Architecture**: MVC pattern with separation of concerns
@@ -44,6 +44,25 @@ A comprehensive REST API for an e-commerce platform built with Express.js, Prism
    JWT_EXPIRES_IN=7d
    PORT=3000
    NODE_ENV=development
+   
+   # Cookie Configuration (Optional)
+   COOKIE_NAME=authToken
+   COOKIE_HTTP_ONLY=true
+   COOKIE_SECURE=false  # Set to true in production (HTTPS required)
+   COOKIE_SAME_SITE=lax
+   
+   # CORS Configuration (Optional)
+   CORS_ORIGIN=http://localhost:3000  # Comma-separated for multiple origins
+   
+   # Redis (Optional - for caching)
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   REDIS_PASSWORD=
+   
+   # Cloudinary (Optional - for image uploads)
+   CLOUDINARY_CLOUD_NAME=your-cloud-name
+   CLOUDINARY_API_KEY=your-api-key
+   CLOUDINARY_API_SECRET=your-api-secret
    ```
 
 4. **Set up the database**
@@ -68,7 +87,13 @@ A comprehensive REST API for an e-commerce platform built with Express.js, Prism
 
 ### Base URL
 ```
-http://localhost:3000/api
+http://localhost:3000
+```
+
+### Swagger UI Documentation
+Interactive API documentation is available at:
+```
+http://localhost:3000/api-docs
 ```
 
 ### Response Format
@@ -98,24 +123,39 @@ http://localhost:3000/api
 
 ### Authentication
 
-Most endpoints require authentication. Include the JWT token in the Authorization header:
+The API uses **HTTP-only cookies** for authentication. When you login or register, the JWT token is automatically set in a secure cookie.
+
+#### Cookie-Based Authentication (Recommended)
+- Tokens are stored in HTTP-only cookies (not accessible via JavaScript)
+- Cookies are automatically sent with each request
+- More secure than token-based authentication (prevents XSS attacks)
+- No need to manually include tokens in requests
+
+#### Backward Compatibility
+The API still supports Bearer token authentication via Authorization header for backward compatibility:
 ```
 Authorization: Bearer <your-token>
 ```
 
+#### Logout
+To logout, call the logout endpoint which clears the authentication cookie:
+```
+POST /auth/logout
+```
+
 ---
 
-## 🔐 User Endpoints
+## 🔐 Authentication Endpoints
 
 ### Register User
 ```http
-POST /api/users/register
+POST /auth/register
 Content-Type: application/json
 
 {
   "username": "johndoe",
   "email": "john@example.com",
-  "password": "password123"
+  "password": "SecurePass123!"
 }
 ```
 
@@ -129,22 +169,24 @@ Content-Type: application/json
       "id": "uuid",
       "username": "johndoe",
       "email": "john@example.com",
+      "role": "USER",
       "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    "token": "jwt-token"
+    }
   },
   "errors": null
 }
 ```
 
+**Note:** The JWT token is automatically set in an HTTP-only cookie named `authToken`. The cookie is sent automatically with subsequent requests.
+
 ### Login
 ```http
-POST /api/users/login
+POST /auth/login
 Content-Type: application/json
 
 {
   "email": "john@example.com",
-  "password": "password123"
+  "password": "SecurePass123!"
 }
 ```
 
@@ -158,18 +200,36 @@ Content-Type: application/json
       "id": "uuid",
       "username": "johndoe",
       "email": "john@example.com",
+      "role": "USER",
       "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    "token": "jwt-token"
+    }
   },
   "errors": null
 }
 ```
 
+**Note:** The JWT token is automatically set in an HTTP-only cookie. No need to manually handle tokens.
+
+### Logout
+```http
+POST /auth/logout
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Logout successful",
+  "object": null,
+  "errors": null
+}
+```
+
+**Note:** This clears the authentication cookie.
+
 ### Get Profile
 ```http
 GET /api/users/profile
-Authorization: Bearer <token>
 ```
 
 **Response:**
@@ -181,6 +241,7 @@ Authorization: Bearer <token>
     "id": "uuid",
     "username": "johndoe",
     "email": "john@example.com",
+    "role": "USER",
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2024-01-01T00:00:00.000Z"
   },
@@ -188,24 +249,32 @@ Authorization: Bearer <token>
 }
 ```
 
+**Note:** Authentication is handled via cookies automatically. No Authorization header needed.
+
 ---
 
 ## 📦 Product Endpoints
 
 ### Create Product
 ```http
-POST /api/products
-Authorization: Bearer <token>
-Content-Type: application/json
+POST /products
+Content-Type: multipart/form-data
 
 {
   "name": "Laptop",
   "description": "High-performance laptop",
   "price": 999.99,
   "stock": 50,
-  "category": "Electronics"
+  "category": "Electronics",
+  "image": <file>  # Optional image file
 }
 ```
+
+**Note:** 
+- Requires authentication (admin only)
+- Image upload is optional
+- Supported image formats: jpg, jpeg, png, webp, gif
+- Maximum file size: 5MB
 
 **Response:**
 ```json
@@ -234,15 +303,18 @@ Content-Type: application/json
 
 ### Get All Products
 ```http
-GET /api/products?page=1&pageSize=10&category=Electronics&search=laptop
+GET /products?page=1&limit=10&category=Electronics&search=laptop&minPrice=100&maxPrice=1000&sortBy=price&sortOrder=asc
 ```
 
 **Query Parameters:**
 - `page` (optional): Page number (default: 1)
-- `pageSize` (optional): Items per page (default: 10, max: 100)
+- `limit` or `pageSize` (optional): Items per page (default: 10, max: 100)
 - `category` (optional): Filter by category
-- `search` (optional): Search in name and description
-- `userId` (optional): Filter by user ID
+- `search` (optional): Search in product name (case-insensitive, partial match)
+- `minPrice` (optional): Minimum price filter
+- `maxPrice` (optional): Maximum price filter
+- `sortBy` (optional): Sort field - `price`, `name`, or `createdAt` (default: `createdAt`)
+- `sortOrder` (optional): Sort order - `asc` or `desc` (default: `desc`)
 
 **Response:**
 ```json
@@ -259,31 +331,33 @@ GET /api/products?page=1&pageSize=10&category=Electronics&search=laptop
 
 ### Get Product by ID
 ```http
-GET /api/products/:id
+GET /products/:id
 ```
 
 ### Update Product
 ```http
-PUT /api/products/:id
-Authorization: Bearer <token>
-Content-Type: application/json
+PUT /products/:id
+Content-Type: multipart/form-data
 
 {
   "name": "Updated Laptop",
   "price": 899.99,
-  "stock": 45
+  "stock": 45,
+  "image": <file>  # Optional - only if updating image
 }
 ```
 
-**Note:** Only the product owner can update their products.
+**Note:** 
+- Requires authentication (admin only)
+- All fields are optional
+- Image upload is optional
 
 ### Delete Product
 ```http
-DELETE /api/products/:id
-Authorization: Bearer <token>
+DELETE /products/:id
 ```
 
-**Note:** Only the product owner can delete their products.
+**Note:** Requires authentication (admin only)
 
 ---
 
@@ -291,8 +365,7 @@ Authorization: Bearer <token>
 
 ### Create Order
 ```http
-POST /api/orders
-Authorization: Bearer <token>
+POST /orders
 Content-Type: application/json
 
 {
@@ -309,6 +382,8 @@ Content-Type: application/json
   ]
 }
 ```
+
+**Note:** Requires authentication. User ID is automatically extracted from the JWT token in the cookie.
 
 **Response:**
 ```json
@@ -338,10 +413,31 @@ Content-Type: application/json
 
 **Note:** Stock is automatically decremented when an order is created.
 
-### Get All Orders
+### Get Order History
+```http
+GET /orders
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "uuid",
+    "status": "pending",
+    "totalPrice": 199.98,
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]
+```
+
+**Note:** 
+- Requires authentication
+- Returns only the authenticated user's orders
+- Returns empty array if user has no orders
+
+### Get All Orders (with pagination)
 ```http
 GET /api/orders?page=1&pageSize=10&status=pending
-Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
@@ -349,20 +445,18 @@ Authorization: Bearer <token>
 - `pageSize` (optional): Items per page (default: 10, max: 100)
 - `status` (optional): Filter by status (pending, processing, shipped, delivered, cancelled)
 
-**Note:** Users can only see their own orders.
+**Note:** Requires authentication
 
 ### Get Order by ID
 ```http
 GET /api/orders/:id
-Authorization: Bearer <token>
 ```
 
-**Note:** Users can only view their own orders.
+**Note:** Requires authentication
 
 ### Update Order Status
 ```http
 PUT /api/orders/:id/status
-Authorization: Bearer <token>
 Content-Type: application/json
 
 {
@@ -401,13 +495,27 @@ A2SV/
 │   ├── middleware/            # Custom middleware
 │   │   ├── auth.middleware.js
 │   │   ├── error.middleware.js
-│   │   └── validation.middleware.js
+│   │   ├── validation.middleware.js
+│   │   ├── rateLimit.middleware.js
+│   │   └── upload.middleware.js
+│   ├── config/                # Configuration files
+│   │   ├── config.js
+│   │   └── swagger.config.js
+│   ├── docs/                  # API documentation
+│   │   └── swagger.ts
+│   ├── errors/                # Error classes
+│   │   └── AppError.ts
 │   ├── utils/                 # Utility functions
 │   │   ├── response.util.js
 │   │   ├── jwt.util.js
-│   │   └── password.util.js
+│   │   ├── password.util.js
+│   │   ├── redis.util.js
+│   │   └── cloudinary.util.js
 │   ├── app.js                 # Express app configuration
 │   └── server.js              # Server entry point
+├── prisma/
+│   └── schema.prisma          # Database schema
+├── .env                       # Environment variables (not in git)
 ├── .env.example               # Environment variables template
 ├── .gitignore
 ├── package.json
@@ -416,20 +524,44 @@ A2SV/
 
 ## 🔒 Security Features
 
-- Password hashing using bcrypt
-- JWT token-based authentication
-- Input validation and sanitization
-- SQL injection protection (Prisma ORM)
-- CORS configuration
-- Environment variable management
+- **Password Hashing**: bcrypt with secure salt rounds
+- **Cookie-Based Authentication**: HTTP-only cookies prevent XSS attacks
+- **JWT Tokens**: Secure token generation and verification
+- **Input Validation**: Comprehensive validation using express-validator
+- **SQL Injection Protection**: Prisma ORM with parameterized queries
+- **CORS Configuration**: Configurable CORS with credentials support
+- **Rate Limiting**: Protection against brute force and DDoS attacks
+- **Environment Variables**: Secure management of sensitive data
+- **Cookie Security**: 
+  - HTTP-only (prevents JavaScript access)
+  - Secure flag in production (HTTPS only)
+  - SameSite protection (CSRF mitigation)
 
 ## 🧪 Testing
 
-You can test the API using tools like:
-- Postman
-- cURL
-- Thunder Client (VS Code extension)
-- Insomnia
+### Using cURL with Cookies
+When testing with cURL, use the `-c` and `-b` flags to handle cookies:
+
+```bash
+# Login and save cookies
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password"}' \
+  -c cookies.txt
+
+# Use cookies for authenticated requests
+curl -X GET http://localhost:3000/api/users/profile \
+  -b cookies.txt
+```
+
+### Using Browser
+Cookies are automatically handled by browsers. Simply login and make requests - authentication is automatic.
+
+### Testing Tools
+- **Postman**: Enable "Automatically follow redirects" and "Send cookies"
+- **Thunder Client** (VS Code): Supports cookie handling
+- **Insomnia**: Automatic cookie management
+- **Swagger UI**: Interactive documentation at `/api-docs`
 
 ## 📝 Error Handling
 

@@ -8,6 +8,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Neon requires SSL connections
+  // Make sure your DATABASE_URL includes ?sslmode=require
 }
 
 model User {
