@@ -3,6 +3,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt.util.js';
 import { errorResponse } from '../utils/response.util.js';
+import { config } from '../config/config.js';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -13,22 +14,30 @@ export interface AuthRequest extends Request {
   file?: Express.Multer.File;
 }
 
-// Middleware to authenticate requests using JWT
+// Middleware to authenticate requests using JWT from cookies
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
-    const authHeader = req.headers.authorization;
+    // Try to get token from cookie first
+    let token = req.cookies?.[config.cookie.name];
+    
+    // Fallback to Authorization header for backward compatibility
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      }
+    }
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json(errorResponse('Authentication required. Please provide a valid token.'));
+    if (!token) {
+      res.status(401).json(errorResponse('Authentication required. Please login to continue.'));
       return;
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     const decoded = verifyToken(token);
 
     if (!decoded) {
-      res.status(401).json(errorResponse('Invalid or expired token.'));
+      res.status(401).json(errorResponse('Invalid or expired token. Please login again.'));
       return;
     }
 

@@ -26,9 +26,20 @@ JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-min-32-chars
 JWT_EXPIRES_IN=7d
 PORT=3000
 NODE_ENV=development
+
+# Cookie Configuration (Optional)
+COOKIE_NAME=authToken
+COOKIE_HTTP_ONLY=true
+COOKIE_SECURE=false
+COOKIE_SAME_SITE=lax
+
+# CORS Configuration (Optional)
+CORS_ORIGIN=http://localhost:3000
 ```
 
-**Important:** Replace `username` and `password` with your PostgreSQL credentials.
+**Important:** 
+- Replace `username` and `password` with your PostgreSQL credentials
+- Generate a secure JWT_SECRET (e.g., `openssl rand -base64 32`)
 
 ### 3. Initialize Database
 
@@ -72,57 +83,112 @@ You should see:
 
 ## Testing the API
 
+### Using cURL with Cookies
+
+The API uses HTTP-only cookies for authentication. When using cURL, you need to save and use cookies.
+
 ### 1. Register a User
 
 ```bash
-curl -X POST http://localhost:3000/api/users/register \
+curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
     "email": "test@example.com",
-    "password": "password123"
-  }'
+    "password": "SecurePass123!"
+  }' \
+  -c cookies.txt
 ```
 
-Save the `token` from the response.
+**Note:** The `-c cookies.txt` flag saves the authentication cookie. The token is automatically set in a cookie - no need to manually extract it.
 
-### 2. Create a Product
+### 2. Login (Alternative to Register)
 
 ```bash
-curl -X POST http://localhost:3000/api/products \
+curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{
-    "name": "Test Product",
-    "description": "This is a test product",
-    "price": 99.99,
-    "stock": 100,
-    "category": "Electronics"
-  }'
+    "email": "test@example.com",
+    "password": "SecurePass123!"
+  }' \
+  -c cookies.txt
 ```
 
-### 3. Get All Products
+### 3. Get User Profile (Authenticated)
 
 ```bash
-curl http://localhost:3000/api/products
+curl -X GET http://localhost:3000/api/users/profile \
+  -b cookies.txt
 ```
 
-### 4. Create an Order
+**Note:** The `-b cookies.txt` flag sends the saved cookie with the request.
+
+### 4. Create a Product
 
 ```bash
-curl -X POST http://localhost:3000/api/orders \
+curl -X POST http://localhost:3000/products \
+  -H "Content-Type: multipart/form-data" \
+  -b cookies.txt \
+  -F "name=Test Product" \
+  -F "description=This is a test product" \
+  -F "price=99.99" \
+  -F "stock=100" \
+  -F "category=Electronics"
+```
+
+**Note:** Requires admin authentication. Use `-b cookies.txt` to send the cookie.
+
+### 5. Get All Products
+
+```bash
+curl http://localhost:3000/products
+```
+
+**Note:** This endpoint is public - no authentication required.
+
+### 6. Create an Order
+
+```bash
+curl -X POST http://localhost:3000/orders \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -b cookies.txt \
   -d '{
     "description": "My first order",
     "products": [
       {
-        "productId": "PRODUCT_ID_FROM_STEP_2",
+        "productId": "PRODUCT_ID_FROM_STEP_4",
         "quantity": 2
       }
     ]
   }'
 ```
+
+### 7. Logout
+
+```bash
+curl -X POST http://localhost:3000/auth/logout \
+  -b cookies.txt
+```
+
+This clears the authentication cookie.
+
+## Using Browser or Postman
+
+When using a browser or Postman:
+1. **Login/Register** - The cookie is automatically set
+2. **Make requests** - The cookie is automatically sent
+3. **Logout** - Clears the cookie
+
+No need to manually handle tokens or cookies - it's all automatic!
+
+## Using Swagger UI
+
+Interactive API documentation is available at:
+```
+http://localhost:3000/api-docs
+```
+
+You can test all endpoints directly from the Swagger UI. For authenticated endpoints, you'll need to login first to get the cookie set.
 
 ## Common Issues
 
@@ -146,8 +212,17 @@ curl -X POST http://localhost:3000/api/orders \
 ## Next Steps
 
 - Read the full [README.md](README.md) for complete API documentation
-- Explore all endpoints using Postman or similar tools
+- Check [README_FEATURES.md](README_FEATURES.md) for advanced features (Redis, Cloudinary, etc.)
+- Explore all endpoints using Swagger UI at `http://localhost:3000/api-docs`
+- Use Postman or similar tools with cookie support
 - Check the code structure in `src/` directory
+
+## Important Notes
+
+- **Authentication**: The API uses HTTP-only cookies. Tokens are automatically managed - you don't need to manually handle them.
+- **CORS**: Make sure your frontend is configured to send credentials (cookies) if calling from a different origin.
+- **Swagger UI**: Interactive API documentation is available at `/api-docs` endpoint.
+- **Environment Variables**: See `.env.example` for all available configuration options.
 
 
 
