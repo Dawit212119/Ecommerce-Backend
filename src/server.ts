@@ -43,5 +43,3 @@ process.on('unhandledRejection', (err: unknown) => {
     process.exit(1);
   });
 });
-
-

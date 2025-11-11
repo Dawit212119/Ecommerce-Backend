@@ -35,15 +35,11 @@ export interface AuthResponse {
 export const registerUser = async (userData: RegisterUserData): Promise<AuthResponse> => {
   const { username, email, password } = userData;
 
-
   const existingUser = await prisma.user.findFirst({
     where: {
-      OR: [
-        { email },
-        { username }
-      ]
-    }
-  });  
+      OR: [{ email }, { username }],
+    },
+  });
 
   if (existingUser) {
     if (existingUser.email === email) {
@@ -60,14 +56,14 @@ export const registerUser = async (userData: RegisterUserData): Promise<AuthResp
     data: {
       username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
     },
     select: {
       id: true,
       username: true,
       email: true,
-      createdAt: true
-    }
+      createdAt: true,
+    },
   });
 
   // Generate token with userId and username (User Story 2)
@@ -75,18 +71,17 @@ export const registerUser = async (userData: RegisterUserData): Promise<AuthResp
 
   return {
     user,
-    token
+    token,
   };
 };
 
-                               
 // Login user
- 
+
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   const { email, password } = credentials;
 
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (!user) {
@@ -110,9 +105,9 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
       id: user.id,
       username: user.username,
       email: user.email,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
     },
-    token
+    token,
   };
 };
 
@@ -126,8 +121,8 @@ export const getUserById = async (userId: string): Promise<UserResponse & { upda
       username: true,
       email: true,
       createdAt: true,
-      updatedAt: true
-    }
+      updatedAt: true,
+    },
   });
 
   if (!user) {
@@ -136,5 +131,3 @@ export const getUserById = async (userId: string): Promise<UserResponse & { upda
 
   return user;
 };
-
-

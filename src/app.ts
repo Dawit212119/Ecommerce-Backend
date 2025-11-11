@@ -1,4 +1,3 @@
-
 import express, { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -21,20 +20,18 @@ app.get('/health', (_req, res) => {
   res.status(200).json({
     success: true,
     message: 'Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 app.use('/auth', authLimiter, authRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
-app.use('/products', apiLimiter, productRoutes); 
-app.use('/api/products', apiLimiter, productRoutes); 
-app.use('/orders', apiLimiter, orderRoutes); 
-app.use('/api/orders', apiLimiter, orderRoutes); 
+app.use('/products', apiLimiter, productRoutes);
+app.use('/api/products', apiLimiter, productRoutes);
+app.use('/orders', apiLimiter, orderRoutes);
+app.use('/api/orders', apiLimiter, orderRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
-
-

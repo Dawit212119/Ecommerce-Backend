@@ -16,7 +16,7 @@ const prisma = new PrismaClient();
  */
 const checkEmailExists = async (email: string): Promise<boolean> => {
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
   return !!user;
 };
@@ -26,7 +26,7 @@ const checkEmailExists = async (email: string): Promise<boolean> => {
  */
 const checkUsernameExists = async (username: string): Promise<boolean> => {
   const user = await prisma.user.findUnique({
-    where: { username }
+    where: { username },
   });
   return !!user;
 };
@@ -56,7 +56,9 @@ router.post(
       .notEmpty()
       .withMessage('Username is required')
       .isAlphanumeric()
-      .withMessage('Username must be alphanumeric (letters and numbers only, no special characters or spaces)')
+      .withMessage(
+        'Username must be alphanumeric (letters and numbers only, no special characters or spaces)'
+      )
       .isLength({ min: 3, max: 30 })
       .withMessage('Username must be between 3 and 30 characters')
       .custom(async (value: string) => {
@@ -84,10 +86,7 @@ router.post(
       }),
 
     // Password validation: complexity requirements
-    body('password')
-      .notEmpty()
-      .withMessage('Password is required')
-      .custom(validatePassword)
+    body('password').notEmpty().withMessage('Password is required').custom(validatePassword),
   ],
   validate,
   userController.register
@@ -111,9 +110,7 @@ router.post(
       .normalizeEmail(),
 
     // User Story 2: Password is required
-    body('password')
-      .notEmpty()
-      .withMessage('Password is required')
+    body('password').notEmpty().withMessage('Password is required'),
   ],
   validate,
   userController.login

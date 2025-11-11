@@ -1,5 +1,4 @@
 // Response utility functions for consistent API responses
- 
 
 export interface BaseResponse {
   success: boolean;
@@ -30,6 +29,9 @@ export interface ProductListResponse {
 
 //  a base response object
 
+/**
+ * Create a standardized API response envelope.
+ */
 export const createBaseResponse = (
   success: boolean,
   message: string,
@@ -40,12 +42,15 @@ export const createBaseResponse = (
     success,
     message,
     object: data,
-    errors
+    errors,
   };
 };
 
 //  a paginated response object
- 
+
+/**
+ * Create a standardized paginated API response envelope.
+ */
 export const createPaginatedResponse = (
   success: boolean,
   message: string,
@@ -62,24 +67,33 @@ export const createPaginatedResponse = (
     pageNumber,
     pageSize,
     totalSize,
-    errors
+    errors,
   };
 };
 
 // a success response
- 
+
+/**
+ * Convenience helper for a successful response.
+ */
 export const successResponse = (message: string, data: any | null = null): BaseResponse => {
   return createBaseResponse(true, message, data, null);
 };
 
 // an error response
- 
+
+/**
+ * Convenience helper for an error response.
+ */
 export const errorResponse = (message: string, errors: string[] | null = null): BaseResponse => {
   return createBaseResponse(false, message, null, errors);
 };
 
 //  a product list response (User Story 5)
- 
+
+/**
+ * Build the product list response shape with pagination metadata.
+ */
 export const createProductListResponse = (
   products: any[],
   currentPage: number,
@@ -87,14 +101,12 @@ export const createProductListResponse = (
   totalProducts: number
 ): ProductListResponse => {
   const totalPages = Math.ceil(totalProducts / pageSize);
-  
+
   return {
     currentPage,
     pageSize,
     totalPages,
     totalProducts,
-    products
+    products,
   };
 };
-
-

@@ -1,20 +1,23 @@
 // Password utility functions for hashing and verification
- 
-import bcrypt from 'bcryptjs';
 
+import bcrypt from 'bcryptjs';
 
 export const hashPassword = async (password: string): Promise<string> => {
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
 };
 
-
-export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
+export const comparePassword = async (
+  password: string,
+  hashedPassword: string
+): Promise<boolean> => {
   return await bcrypt.compare(password, hashedPassword);
 };
 
 //  validate password complexity
-export const validatePasswordComplexity = (password: string): { valid: boolean; errors: string[] } => {
+export const validatePasswordComplexity = (
+  password: string
+): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (password.length < 8) {
@@ -39,10 +42,6 @@ export const validatePasswordComplexity = (password: string): { valid: boolean; 
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 };
-
-
-
-

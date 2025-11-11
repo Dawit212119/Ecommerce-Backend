@@ -19,41 +19,30 @@ export const requireAdmin = async (
   try {
     // Check if user is authenticated
     if (!req.user) {
-      res.status(401).json(
-        errorResponse('Authentication required. Please provide a valid token.')
-      );
+      res.status(401).json(errorResponse('Authentication required. Please provide a valid token.'));
       return;
     }
 
     // Get user from database to check role
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
-      select: { role: true }
+      select: { role: true },
     });
 
     if (!user) {
-      res.status(401).json(
-        errorResponse('User not found.')
-      );
+      res.status(401).json(errorResponse('User not found.'));
       return;
     }
 
     // User Story 3: Check if user has Admin role
     if (user.role !== 'Admin') {
-      res.status(403).json(
-        errorResponse('Access denied. Admin role required.')
-      );
+      res.status(403).json(errorResponse('Access denied. Admin role required.'));
       return;
     }
 
     next();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json(
-      errorResponse('Authorization check failed.', [errorMessage])
-    );
+    res.status(500).json(errorResponse('Authorization check failed.', [errorMessage]));
   }
 };
-
-
-
