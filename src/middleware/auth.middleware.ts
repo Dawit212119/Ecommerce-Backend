@@ -20,7 +20,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   try {
     // Try to get token from cookie first
     let token = req.cookies?.[config.cookie.name];
-    
+
     // Fallback to Authorization header for backward compatibility
     if (!token) {
       const authHeader = req.headers.authorization;
