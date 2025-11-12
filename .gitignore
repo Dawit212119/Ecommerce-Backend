@@ -4,8 +4,6 @@ package-lock.json
 yarn.lock
 
 # Environment variables
-.env
-.env.local
 .env.*.local
 
 # Prisma
@@ -23,7 +21,6 @@ yarn-error.log*
 Thumbs.db
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -37,3 +34,7 @@ build/
 
 
 
+
+config.bat
+temp_auto_push.bat
+temp_interactive_push.bat
