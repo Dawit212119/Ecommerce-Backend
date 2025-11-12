@@ -14,7 +14,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
   try {
     const { user, token } = await userService.registerUser(req.body);
     const { config } = await import('../config/config.js');
-    
+
     // Set token in HTTP-only cookie
     res.cookie(config.cookie.name, token, {
       httpOnly: config.cookie.httpOnly,
@@ -22,7 +22,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       sameSite: config.cookie.sameSite,
       maxAge: config.cookie.maxAge,
     });
-    
+
     // Return user data without token
     res.status(201).json(successResponse('User registered successfully', { user }));
   } catch (error) {
@@ -38,7 +38,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const { user, token } = await userService.loginUser(req.body);
     const { config } = await import('../config/config.js');
-    
+
     // Set token in HTTP-only cookie
     res.cookie(config.cookie.name, token, {
       httpOnly: config.cookie.httpOnly,
@@ -46,7 +46,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       sameSite: config.cookie.sameSite,
       maxAge: config.cookie.maxAge,
     });
-    
+
     // Return user data without token
     res.status(200).json(successResponse('Login successful', { user }));
   } catch (error) {
@@ -81,14 +81,14 @@ export const getProfile = async (
 export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { config } = await import('../config/config.js');
-    
+
     // Clear the authentication cookie
     res.clearCookie(config.cookie.name, {
       httpOnly: config.cookie.httpOnly,
       secure: config.cookie.secure,
       sameSite: config.cookie.sameSite,
     });
-    
+
     res.status(200).json(successResponse('Logout successful'));
   } catch (error) {
     next(error);

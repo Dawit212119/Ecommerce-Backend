@@ -46,3 +46,4 @@ export const requireAdmin = async (
     res.status(500).json(errorResponse('Authorization check failed.', [errorMessage]));
   }
 };
+

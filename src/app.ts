@@ -18,10 +18,10 @@ const app: Application = express();
 // CORS configuration to allow credentials (cookies)
 // Allow all origins in development, restrict in production
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN 
-    ? process.env.CORS_ORIGIN.split(',') 
-    : process.env.NODE_ENV === 'production' 
-      ? false 
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',')
+    : process.env.NODE_ENV === 'production'
+      ? false
       : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
